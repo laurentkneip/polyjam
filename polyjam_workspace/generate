@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [[ -e CMakeLists.txt ]]; then
+  rm CMakeLists.txt
+fi
+cp CMakeLists_template.txt CMakeLists.txt
+
+echo "add_executable( $1 $1/$1.cpp )" >> CMakeLists.txt
+part1="target_link_libraries( $1"
+part2='${POLYJAM_LIBRARY_PATH} )'
+link_command="$part1 $part2"
+echo ${link_command} >> CMakeLists.txt
+echo '' >> CMakeLists.txt
+
+if [[ ! -e build ]]; then
+  mkdir build
+fi
+cd build
+cmake ..
+make
+cd ../bin
+./$1
