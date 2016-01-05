@@ -30,12 +30,13 @@ polyjam::generator::methods::experiment(
     bool visualization,
     bool consolePrint )
 {
+  bool preVisualization = false;
   CMatrix pe_matrix(polynomials);
-  if(visualization)
+  if(visualization && preVisualization)
     pe_matrix.visualize(true);
 
   pe_matrix.reduce();
-  if(visualization)
+  if(visualization && preVisualization)
     pe_matrix.visualize(true);
   
   if( consolePrint )

@@ -7,7 +7,7 @@ int main( int argc, char** argv )
   size_t nu = 6; //the number of unknowns in the problem
   size_t numberBearingVectors = 3;
 
-  //****** Part 1: get random measurements from a random problem *******//
+  //****** Part 1: get independent random variables *******//
 
   //random rotation
   std::cout << "generating random rotation" << std::endl;
@@ -22,12 +22,12 @@ int main( int argc, char** argv )
   R_gt(0,0) = scale12_inv * ( Poly::oneZ(nu) + (cay_gt[0]*cay_gt[0]) - (cay_gt[1]*cay_gt[1]) - (cay_gt[2]*cay_gt[2]) );
   R_gt(1,1) = scale12_inv * ( Poly::oneZ(nu) - (cay_gt[0]*cay_gt[0]) + (cay_gt[1]*cay_gt[1]) - (cay_gt[2]*cay_gt[2]) );
   R_gt(2,2) = scale12_inv * ( Poly::oneZ(nu) - (cay_gt[0]*cay_gt[0]) - (cay_gt[1]*cay_gt[1]) + (cay_gt[2]*cay_gt[2]) );
-  R_gt(0,1) = scale12_inv * ( Poly::oneZ(nu) * (cay_gt[0]*cay_gt[1]-cay_gt[2]) );
-  R_gt(0,2) = scale12_inv * ( Poly::oneZ(nu) * (cay_gt[0]*cay_gt[2]+cay_gt[1]) );
-  R_gt(1,2) = scale12_inv * ( Poly::oneZ(nu) * (cay_gt[1]*cay_gt[2]-cay_gt[0]) );
-  R_gt(1,0) = scale12_inv * ( Poly::oneZ(nu) * (cay_gt[0]*cay_gt[1]+cay_gt[2]) );
-  R_gt(2,0) = scale12_inv * ( Poly::oneZ(nu) * (cay_gt[0]*cay_gt[2]-cay_gt[1]) );
-  R_gt(2,1) = scale12_inv * ( Poly::oneZ(nu) * (cay_gt[1]*cay_gt[2]+cay_gt[0]) );
+  R_gt(0,1) = scale12_inv * ( Poly::constZ(2,nu) * (cay_gt[0]*cay_gt[1]-cay_gt[2]) );
+  R_gt(0,2) = scale12_inv * ( Poly::constZ(2,nu) * (cay_gt[0]*cay_gt[2]+cay_gt[1]) );
+  R_gt(1,2) = scale12_inv * ( Poly::constZ(2,nu) * (cay_gt[1]*cay_gt[2]-cay_gt[0]) );
+  R_gt(1,0) = scale12_inv * ( Poly::constZ(2,nu) * (cay_gt[0]*cay_gt[1]+cay_gt[2]) );
+  R_gt(2,0) = scale12_inv * ( Poly::constZ(2,nu) * (cay_gt[0]*cay_gt[2]-cay_gt[1]) );
+  R_gt(2,1) = scale12_inv * ( Poly::constZ(2,nu) * (cay_gt[1]*cay_gt[2]+cay_gt[0]) );
   
   //random translation
   std::cout << "generating random translation" << std::endl;
@@ -58,7 +58,7 @@ int main( int argc, char** argv )
   
   for( int i = 0; i < (int) numberBearingVectors; i++ )
   {
-    PolyMatrix f = R_gt.transpose() * ( wps[i] - t_gt );
+    PolyMatrix f = R_gt.transpose() * ( wps[i] - t_gt ) - vs[i];
 
     //do some normalization here (just divide by the last coordinate!)
     Poly f_scale = f[2].clone();
