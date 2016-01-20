@@ -111,8 +111,24 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
   cmd << MACAULAYCOMMAND << " --silent " << tempfile.str();
   string macaulayOutput = exec(cmd.str().c_str());
 
-  std::cout << "The basis monomials are:" << std::endl;
+  std::cout << "The degree of the basis and the basis monomials (if existing) are:" << std::endl;
   std::cout << macaulayOutput << std::endl;
+
+  //analyse the dimensionality
+  string line;
+  istringstream input_iss(macaulayOutput);
+  getline(input_iss, line);
+  int dim = atoi(line.c_str());
+  if( dim != 0 )
+  {
+    if( dim > 0 )
+      std::cout << "Stopping here. The dimensionality of the ideal is bigger than zero! This means that there are not enough equations, and the problem is underconstrained." << std::endl;
+    
+    if( dim < 0 )
+      std::cout << "Stopping here. The dimensionality of the ideal is smaller than zero! This means that there are too many equations, and the problem is overconstrained." << std::endl;
+
+    return;
+  }
 
   //now extract the basis monomials from this string
   std::vector<Monomial> baseMonomials_temp;
@@ -187,6 +203,8 @@ polyjam::extractMonomials( const std::string & input, vector<Monomial> & baseMon
   list<string> lines;
   string line;
   istringstream input_iss(input);
+  //ATTENTION: Remove the first line which contains the dimensionality of the ideal
+  getline(input_iss, line);
   while( getline(input_iss, line) )
   {
     if( line.substr(0,4) != "----" )

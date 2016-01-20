@@ -100,7 +100,7 @@ polyjam::generator::ExportMacaulay::write( const std::string & fileName )
   file << "--printing of the output"                                             << endl;
   //file << ""                                                                     << endl;
   //file << "print \"dim:\""                                                       << endl;
-  //file << "print dm;"                                                            << endl;
+  file << "print dm;"                                                            << endl;
   //file << "print \"deg:\""                                                       << endl;
   //file << "print dg;"                                                            << endl;
   file << ""                                                                     << endl;
