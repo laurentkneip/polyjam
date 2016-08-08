@@ -427,8 +427,37 @@ polyjam::generator::methods::generate(
       finalMonomials.push_back(temp);
   }
 
+  //New block: reorder the equations such that we are closest possible to row-echelon form
+  //finalEquations is of form: std::vector< std::pair<int,core::Monomial> >
+  //use test_matrix_temp to reorder the stuff
+  CMatrix test_matrix_temp( zp_polynomials, finalMonomials, finalEquations );
+  std::vector<int> preIndices; preIndices.reserve(test_matrix_temp.rows());
+  std::vector<int> postIndices; postIndices.reserve(test_matrix_temp.rows());
+  for( int i = 0; i < test_matrix_temp.rows(); i++ )
+    preIndices.push_back(i);
+  int currentCol = 0;
+  while( !preIndices.empty() )
+  {
+    std::vector<int>::iterator nonzeroSearcher = preIndices.begin();
+    while( nonzeroSearcher != preIndices.end() )
+    {
+      if( !test_matrix_temp(*nonzeroSearcher,currentCol).isZero() )
+      {
+        postIndices.push_back(*nonzeroSearcher);
+        nonzeroSearcher = preIndices.erase(nonzeroSearcher);
+      }
+      else
+        nonzeroSearcher++;
+    }
+    currentCol++;
+  }
+
+  std::vector<std::pair<int,core::Monomial> > finalReorderedEquations; finalReorderedEquations.reserve(finalEquations.size());
+  for( int i = 0; i < postIndices.size(); i++ )
+    finalReorderedEquations.push_back( finalEquations[postIndices[i]] );
+
   //verify that the reordered matrix gives a good result
-  CMatrix test_matrix( zp_polynomials, finalMonomials, finalEquations );
+  CMatrix test_matrix( zp_polynomials, finalMonomials, finalReorderedEquations );
   if(visualize)
     test_matrix.visualize();
   test_matrix.reduce();
@@ -463,7 +492,7 @@ polyjam::generator::methods::generate(
   M2type << "Eigen::MatrixXd ";
   code << M2type.str() << " M2(" << M2rows << "," << M2cols << ");" << std::endl;
   code << "M2.fill(0.0);" << std::endl;
-  CMatrix helper(sym_polynomials,finalMonomials,finalEquations);
+  CMatrix helper(sym_polynomials,finalMonomials,finalReorderedEquations);
 
   for( int r = 0; r < M2rows; r++ )
   {
@@ -498,7 +527,7 @@ polyjam::generator::methods::generate(
       }
     }
     code << "};" << std::endl;
-    code << "initRow( M2, M1, " << r << ", " << finalEquations[r].first << ", ind_2_" << r << ", ind_1_" << r << ", " << numberCoefficients << "  );" << std::endl;
+    code << "initRow( M2, M1, " << r << ", " << finalReorderedEquations[r].first << ", ind_2_" << r << ", ind_1_" << r << ", " << numberCoefficients << "  );" << std::endl;
   }
   code << std::endl;
   
@@ -710,7 +739,7 @@ polyjam::generator::methods::transformExpanders(
   CMatrix::eqs_t equations;
   
   for( int row = 0; row < (int) polynomials; row++ )
-    equations.push_back(std::pair<int,core::Monomial>(row,expanders.front().dimensions()));
+    equations.push_back(std::pair<int,core::Monomial>( row,expanders.front().dimensions() ));
   
   std::vector<core::Monomial>::const_iterator expIter = expanders.begin();
   while( expIter != expanders.end() )
