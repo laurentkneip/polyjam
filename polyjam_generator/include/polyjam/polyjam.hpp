@@ -39,6 +39,8 @@ namespace polyjam
   void initGenerator();
   void execGenerator( list<Poly*> & eqs, const string & solverName, const string & parameters, bool visualize = false );
   void execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & parameters, bool visualize = false );
+  void execGenerator( list<Poly*> & eqs, const string & solverName, const string & suffix, const string & parameters, bool visualize = false );
+  void execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & suffix, const string & parameters, bool visualize = false );
 
   //The following functions are for interaction with Macaulay and interpretation of the result
   string exec( const char * cmd );

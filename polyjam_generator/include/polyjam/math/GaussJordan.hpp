@@ -146,7 +146,7 @@ gaussReduction(
 {
   //define some types to make life easier
   typedef COEFFICIENT coefficient_t;
-  
+
   bool consolePrint = false;
   
   //initialize the continuous visualization

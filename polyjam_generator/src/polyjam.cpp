@@ -44,6 +44,12 @@ polyjam::initGenerator()
 void
 polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const string & parameters, bool visualize )
 {
+  execGenerator(eqs, solverName, std::string(""), parameters, visualize);
+}
+
+void
+polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const string & suffix, const string & parameters, bool visualize )
+{
   //the goal of this function is to split up the polynomials into symbolic and finite field ones
 
   list<Poly*> eqs_zp;
@@ -64,11 +70,17 @@ polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const stri
   }
 
   //done, call the original execGenerator
-  execGenerator( eqs_zp, eqs_sym, solverName, parameters, visualize );
+  execGenerator( eqs_zp, eqs_sym, solverName, suffix, parameters, visualize );
 }
 
 void
 polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & parameters, bool visualize )
+{
+  execGenerator(eqs, eqs_sym, solverName, std::string(""), parameters, visualize);
+}
+
+void
+polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & suffix, const string & parameters, bool visualize )
 {
   //create a list of monomials for all the unknowns (those will expand the original system of equations)
   vector<Monomial> expanders;
@@ -96,7 +108,7 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
   }
 
   stringstream tempfile;
-  tempfile << subdir.str() << "/" << solverName << ".m2";
+  tempfile << subdir.str() << "/" << solverName << "_" << suffix << ".m2";
   ExportMacaulay exportMacaulay;
   
   std::list<Poly*>::const_iterator eqIter = eqs.begin();
@@ -162,7 +174,7 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
 
   //generate sub-directory if it does not exist
   stringstream subdir2;
-  subdir2 << SOLVERPATH << solverName;
+  subdir2 << SOLVERPATH << solverName << "_" << suffix;
 
   struct stat info2;
   if( stat( subdir2.str().c_str(), &info2 ) != 0 )
@@ -174,10 +186,10 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
 
   std::cout << "Starting the solver generation." << std::endl;
   stringstream codeFile;
-  codeFile << SOLVERPATH << solverName << "/" << solverName << ".cpp";
+  codeFile << SOLVERPATH << solverName << "/" << solverName << "_" << suffix << ".cpp";
   stringstream headerFile;
-  headerFile << SOLVERPATH << solverName << "/" << solverName << ".hpp";
-  methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), solverName, parameters, visualize );
+  headerFile << SOLVERPATH << solverName << "/" << solverName << "_" << suffix << ".hpp";
+  methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), (solverName + "_" + suffix), parameters, visualize );
 }
 
 string

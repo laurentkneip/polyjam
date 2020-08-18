@@ -133,7 +133,7 @@ polyjam::generator::CMatrix::~CMatrix()
 void
 polyjam::generator::CMatrix::reduce()
 {
-  math::gaussReduction(_matrix,false);
+  math::gaussReduction(_matrix);
 }
 
 //accessors

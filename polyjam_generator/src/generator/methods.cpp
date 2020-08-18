@@ -250,10 +250,14 @@ polyjam::generator::methods::generate(
   
   //Do the pre-elimination
   pe_matrix.reduce();
+
   std::list<core::Poly*> zp_polynomials  = pe_matrix.getPolynomials();
   //std::list<core::Poly*> sym_polynomials = pe_matrix.getSymbolicPolynomials( std::string("M1") );
   std::list<core::Poly*> sym_polynomials = pe_matrix.getSymbolicPolynomials2();
-  code << "polyjam::math::gaussReduction(M1);" << std::endl << std::endl;
+  //code << "polyjam::math::gaussReduction(M1);" << std::endl << std::endl;
+  code << "Eigen::Matrix<double," << M1rows << "," << M1rows << "> temp = M1.topLeftCorner(" << M1rows << "," << M1rows << ").inverse();\n";
+  code << "Eigen::Matrix<double," << M1rows << "," << M1rows << "> temp2 = temp * M1;\n"; 
+  code << "M1 = temp2;\n\n";
 
   std::cout << "Pre-elimination is done." << std::endl;
 
