@@ -52,5 +52,5 @@ int main( int argc, char** argv )
   }
 
   //****** Part 2: Generate the solver ***************
-  execGenerator( eqs, string("sw6pt"), string("Eigen::Matrix3d & F1, Eigen::Matrix3d & F2, Eigen::Matrix3d & F3") );
+  execGenerator( eqs, string("sw6pt"), string("Eigen::Matrix3d & F1, Eigen::Matrix3d & F2, Eigen::Matrix3d & F3"), true );
 }

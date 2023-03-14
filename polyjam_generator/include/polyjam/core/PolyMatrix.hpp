@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <polyjam/core/Poly.hpp>
 
 //todo:
@@ -54,7 +54,7 @@ class PolyMatrix
 {
 public:
   /** A pointer to a polynomial */
-  typedef boost::shared_ptr<Poly> PolyPtr;
+  typedef std::shared_ptr<Poly> PolyPtr;
   
   //constructors/destructor
 

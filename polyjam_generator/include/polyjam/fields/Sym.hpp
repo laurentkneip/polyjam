@@ -30,7 +30,7 @@
 #include <set>
 #include <functional>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <polyjam/fields/Field.hpp>
 
@@ -186,7 +186,7 @@ class Sym : public Field
 public:
 
   typedef std::set<SymProduct,std::greater<SymProduct> > symCombination_t;
-  typedef boost::shared_ptr<symCombination_t> symCombinationPtr;
+  typedef std::shared_ptr<symCombination_t> symCombinationPtr;
 
   /**
    * \brief Constructor.
