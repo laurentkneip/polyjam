@@ -74,7 +74,8 @@ void generate(
     const std::string & codeFile,
     const std::string & solverName,
     const std::string & parameters,
-    bool visualize = false );
+    bool visualize = false,
+    const std::string save_path = std::string("/tmp"));
 
 void generateSuperlinearExpanders( std::vector<core::Monomial> & expanders, int maxDegree );
 

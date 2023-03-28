@@ -64,7 +64,9 @@ void
 visualizeMatrix(
     std::vector<std::vector<COEFFICIENT>*> & matrix,
     bool createAndDestroy = true,
-    bool saveImage = false )
+    bool saveImage = false,
+    std::string name = std::string("coefficientMatrix"),
+    std::string save_path = std::string("/tmp") )
 {
   //define some types to make life easier
   typedef COEFFICIENT coefficient_t;
@@ -74,25 +76,24 @@ visualizeMatrix(
   coefficient_t precision = customGetPrecision( (*(matrix[0]))[0] );
   
   //define some colors
-  CvScalar Red = CV_RGB( 255, 0, 0 );
-  CvScalar DarkRed = CV_RGB( 220, 0, 0 );
-  //CvScalar Yellow = CV_RGB( 255, 255, 0 );
-  CvScalar Blue = CV_RGB( 0, 0, 255 );
-  //CvScalar Purple = CV_RGB( 192, 0, 192 );
+  cv::Scalar Red( 255, 0, 0 );
+  cv::Scalar DarkRed( 220, 0, 0 );
+  //cv::Scalar Yellow( 255, 255, 0 );
+  cv::Scalar Blue( 0, 0, 255 );
+  //cv::Scalar Purple( 192, 0, 192 );
 
   //create a white image with correct size
   int imgWidth = matrix.front()->size();
   int imgHeight = matrix.size();
   
-  IplImage* img =
-      cvCreateImage( cvSize( imgWidth, imgHeight ), IPL_DEPTH_8U, 3 );
+  cv::Mat img( imgHeight, imgWidth, CV_8UC3, cv::Scalar( 0, 0, 0 ) );
   
   //set the whole image with the right color
   for( int row = 0; row < imgHeight; row++ )
   {
     for( int col = 0; col < imgWidth; col++ )
     {
-      CvScalar color = Blue;
+      cv::Scalar color = Blue;
       if( !( (*(matrix[row]))[col] == zero ) )
       //***//if(
       //***//    ( (*(matrix[row]))[col] < zero && (*(matrix[row]))[col] < precision.negation() ) ||
@@ -102,37 +103,17 @@ visualizeMatrix(
         if( col % 2 == 1 )
           color = DarkRed;
       }
-      
-      cvSet2D( img, row, col, color );
+      img.at<cv::Vec3b>(row, col)[0] = color[0];
+      img.at<cv::Vec3b>(row, col)[1] = color[1];
+      img.at<cv::Vec3b>(row, col)[2] = color[2];
     }
   }
   
   //now visualize the image
-  std::string name("coefficient matrix");
-  
-  if( createAndDestroy )
-  {
-    cvNamedWindow( name.c_str(), 0 );
-    cvStartWindowThread();
-  }
-  
-  cvResizeWindow( name.c_str(), imgWidth, imgHeight );
-  cvShowImage( name.c_str(), img );
   if( saveImage )
   {
-    std::string path("/Users/laurent/temp/pe_pattern.png");
-    cvSaveImage( path.c_str(), img );
+    cv::imwrite(save_path + name + std::string(".png"), img);
   }
-  
-  if( createAndDestroy )
-  {
-    char exit_key_press = 0;
-    while ((int) exit_key_press != 27) // or key != ESC
-      exit_key_press = cvWaitKey(10);
-    //cvDestroyWindow(name.c_str());
-  }
-  
-  cvReleaseImage(&img);
 }
 
 //This is a templated implementation of a Gauss-reduction
@@ -154,8 +135,8 @@ gaussReduction(
   std::string name("coefficient matrix");
   if( continuousVisualization )
   {
-    cvNamedWindow( name.c_str(), 0 );
-    cvStartWindowThread();
+    cv::namedWindow( name, 0 );
+    cv::startWindowThread();
   }
   
   //create some constants for zero-checking etc.
@@ -348,7 +329,7 @@ gaussReduction(
   }
   
   if(continuousVisualization)
-    cvDestroyWindow(name.c_str());
+    cv::destroyWindow(name);
 }
 
 }

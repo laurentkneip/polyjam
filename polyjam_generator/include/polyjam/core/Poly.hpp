@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string>
 #include <set>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <polyjam/core/Term.hpp>
 
 //todo:
@@ -69,7 +69,7 @@ public:
    */
   typedef std::set<Term,std::greater<Term> > terms_t;
   /** A pointer to the terms-container */
-  typedef boost::shared_ptr<terms_t> termsPtr;
+  typedef std::shared_ptr<terms_t> termsPtr;
 
   // constructors/destructor
   

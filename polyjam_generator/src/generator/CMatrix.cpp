@@ -320,9 +320,9 @@ polyjam::generator::CMatrix::contains( const polynomials_t & polynomials )
 }
 
 void
-polyjam::generator::CMatrix::visualize( bool save )
+polyjam::generator::CMatrix::visualize( bool save, std::string name, std::string save_path )
 {
-  math::visualizeMatrix(_matrix,true,save);
+  math::visualizeMatrix(_matrix, true, save, name, save_path);
 }
 
 //internal

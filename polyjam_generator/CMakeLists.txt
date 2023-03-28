@@ -19,16 +19,12 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-add_definitions (-Wall -march=native -O3 -msse3 -mssse3 -fomit-frame-pointer -std=c++11 )
+add_definitions (-Wall -O3 -fomit-frame-pointer -std=c++11 )
 cmake_policy(SET CMP0005 OLD)
 
 #TODO: set the correct command to execute Macaulay from the console
 IF(NOT DEFINED MACAULAYCOMMAND)
-  IF(APPLE)
-    SET(MACAULAYCOMMAND '"/./Applications/Macaulay2-1.7/bin/M2"')
-  ELSE()
-    SET(MACAULAYCOMMAND '"M2"')
-  ENDIF()
+  SET(MACAULAYCOMMAND '"M2"')
 ENDIF()
 ADD_DEFINITIONS(-DMACAULAYCOMMAND=${MACAULAYCOMMAND})
 

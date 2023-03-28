@@ -150,5 +150,5 @@ int main( int argc, char** argv )
 
   //****** Part 5: generate the solver ********************//
 
-  execGenerator( eqs, string("gen3pt"), string("std::vector<Eigen::Vector3d,Eigen::aligned_allocator<Eigen::Vector3d> > & fs, std::vector<Eigen::Vector3d,Eigen::aligned_allocator<Eigen::Vector3d> > & vs, std::vector<Eigen::Vector3d,Eigen::aligned_allocator<Eigen::Vector3d> > & wps") );
+  execGenerator( eqs, string("gen3pt"), string("std::vector<Eigen::Vector3d> & fs, std::vector<Eigen::Vector3d> & vs, std::vector<Eigen::Vector3d> & wps"), true, "." );
 }

@@ -220,7 +220,8 @@ polyjam::generator::methods::generate(
     const std::string & codeFile,
     const std::string & solverName,
     const std::string & parameters,
-    bool visualize )
+    bool visualize,
+    const std::string save_path )
 {
   std::stringstream code;
   
@@ -247,9 +248,13 @@ polyjam::generator::methods::generate(
     code << std::endl;
   }
   code << std::endl;
-  
-  //Do the pre-elimination
+
+  // save the pre-elimination as pictures
+  if( visualize )
+    pe_matrix.visualize( true, std::string("M1Before"), save_path );
   pe_matrix.reduce();
+  if( visualize )
+    pe_matrix.visualize( true, std::string("M1after"), save_path );
 
   std::list<core::Poly*> zp_polynomials  = pe_matrix.getPolynomials();
   //std::list<core::Poly*> sym_polynomials = pe_matrix.getSymbolicPolynomials( std::string("M1") );
@@ -466,16 +471,28 @@ polyjam::generator::methods::generate(
     test_matrix.visualize();
   test_matrix.reduce();
   if(visualize)
-    test_matrix.visualize();
+    test_matrix.visualize( true, std::string("M2after"), save_path ); //put true here to save the final matrix (useful if not using the action matrix method)
 
-  /*
-  std::cout << "starting print of monomials" << std::endl;
-  for( int i = 0; i < finalMonomials.size(); i++ )
-  {
-    finalMonomials[i].print();
+  if(visualize) {
+    //use this block here in order to print the polynomials into the console:
+    std::cout << "Printing all polynomials into the console" << std::endl;
+    std::list<core::Poly*> printPolys = test_matrix.getPolynomials();
+    std::list<core::Poly*>::iterator ititit = printPolys.begin();
+    while( ititit != printPolys.end() ) {
+      (*ititit)->print();
+      ititit++;
+    }
+    std::cout << std::endl;
+
+    //use this block here to print all the monomials into the console
+    std::cout << "Printing all monomials into the console" << std::endl;
+    for( int i = 0; i < finalMonomials.size(); i++ )
+    {
+      finalMonomials[i].print();
+      std::cout << std::endl;
+    }
     std::cout << std::endl;
   }
-  */
   
   std::cout << "Extracting the code" << std::endl;
 
@@ -544,7 +561,7 @@ polyjam::generator::methods::generate(
   
   int unknownNbr = baseMonomials[0].dimensions();
   std::stringstream solutionsType;
-  solutionsType << "std::vector< Eigen::Matrix<double," << unknownNbr << ",1>, Eigen::aligned_allocator<Eigen::Matrix<double," << unknownNbr << ",1> > >";
+  solutionsType << "std::vector< Eigen::Matrix<double," << unknownNbr << ",1>>";
   std::stringstream Actiontype;
   Actiontype << "Eigen::Matrix<double," << solNbr << "," << solNbr << ">";
   code << Actiontype.str() << " Action = " << Actiontype.str() << "::Zero();" << std::endl;
@@ -642,7 +659,6 @@ polyjam::generator::methods::generate(
 
   file << std::endl;
   file << "#include \"" << solverName << ".hpp\"" << std::endl;
-  file << "#include \"GaussJordan.hpp\"" << std::endl;
   file << std::endl;
   file << std::endl;
   file << "void" << std::endl;

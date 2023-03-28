@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <polyjam/fields/Field.hpp>
 
@@ -59,7 +59,7 @@ class Coefficient
 public:
 
   /** A pointer to the actual field-object underneath */
-  typedef boost::shared_ptr<fields::Field> FieldPtr;
+  typedef std::shared_ptr<fields::Field> FieldPtr;
   
   // Constructors
 
