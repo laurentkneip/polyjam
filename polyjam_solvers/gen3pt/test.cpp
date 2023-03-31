@@ -52,22 +52,22 @@ int main( int argc, char** argv )
   Eigen::Matrix3d rotation = generateRandomRotation(0.5);
   
   //create a random camera-system
-  std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > camOffsets;
-  std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > camRotations;
+  std::vector<Eigen::Vector3d> camOffsets;
+  std::vector<Eigen::Matrix3d> camRotations;
   generateRandomCameraSystem( numberCameras, camOffsets, camRotations );
   
   //derive correspondences based on random point-cloud
-  std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > bearingVectors;
-  std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > points;
+  std::vector<Eigen::Vector3d> bearingVectors;
+  std::vector<Eigen::Vector3d> points;
   std::vector<int> camCorrespondences;
   Eigen::MatrixXd gt(3,numberPoints);
   generateRandom2D3DCorrespondences(
       position, rotation, camOffsets, camRotations, numberPoints, noise, outlierFraction,
       bearingVectors, points, camCorrespondences, gt );
 
-  std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > realBearingVectors;
-  std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > realCamOffsets;
-  std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > realPoints;
+  std::vector<Eigen::Vector3d> realBearingVectors;
+  std::vector<Eigen::Vector3d> realCamOffsets;
+  std::vector<Eigen::Vector3d> realPoints;
   for( int i = 0; i < 3; i++ )
   {
     realBearingVectors.push_back(camRotations[camCorrespondences[i]] * bearingVectors[i]);
@@ -87,7 +87,7 @@ int main( int argc, char** argv )
   //run the experiments
   std::cout << "running Kneip's GP3P (using first three correspondences/";
   std::cout << std::endl;
-  std::vector< Eigen::Matrix<double,6,1>, Eigen::aligned_allocator< Eigen::Matrix<double,6,1> > > solutions;
+  std::vector< Eigen::Matrix<double,6,1> > solutions;
   gettimeofday( &tic, 0 );
   for(size_t i = 0; i < iterations; i++)
   {
@@ -98,7 +98,7 @@ int main( int argc, char** argv )
   double gp3p_time = TIMETODOUBLE(timeval_minus(toc,tic)) / iterations;
 
   //todo: transform from Action matrix to real solutions
-  std::vector< Eigen::Matrix<double,3,4>, Eigen::aligned_allocator<Eigen::Matrix<double,3,4> > > gp3p_transformations;
+  std::vector< Eigen::Matrix<double,3,4> > gp3p_transformations;
   
   for( int c = 0; c < solutions.size(); c++ )
   {

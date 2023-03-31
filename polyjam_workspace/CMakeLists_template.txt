@@ -20,7 +20,7 @@ ELSE()
   set(POLYJAM_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../polyjam_generator/lib/libpolyjam.so )
 ENDIF()
 
-add_definitions (-Wall -march=native -O3 -msse3 -mssse3 -fomit-frame-pointer -std=c++11 )
+add_definitions (-Wall -O3 -fomit-frame-pointer -std=c++11 )
 cmake_policy(SET CMP0005 OLD)
 
 include_directories(${PROJECT_SOURCE_DIR}/../polyjam_generator/include)

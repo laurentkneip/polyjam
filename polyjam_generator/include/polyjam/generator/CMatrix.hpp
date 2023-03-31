@@ -85,7 +85,8 @@ public:
   
   //verifiers
   bool contains( const polynomials_t & polynomials );
-  void visualize( bool save = false, std::string name = std::string("coefficientMatrix"), std::string save_path = std::string("/tmp") );
+  void visualize();
+  void save( const std::string & name, const std::string & save_path );
 
 private:
   CMatrix( cmatrix_t & matrix, monomials_t & monomials );

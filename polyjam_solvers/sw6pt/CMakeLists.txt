@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
-project(test_gen3pt)
+project(test_sw6pt)
 
 # Set the build type.  Options are:
 #
@@ -23,7 +23,7 @@ find_package(Eigen REQUIRED)
 
 include_directories(${EIGEN_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIR}/unsupported ${PROJECT_SOURCE_DIR}/include)
 
-add_library( random_generators SHARED random_generators.cpp random_generators.hpp experiment_helpers.cpp experiment_helpers.hpp time_measurement.cpp time_measurement.hpp )
+add_library( random_generators SHARED random_generators.cpp random_generators.hpp time_measurement.cpp time_measurement.hpp )
 
-add_executable( test_gen3pt test.cpp gen3pt.cpp )
-target_link_libraries( test_gen3pt random_generators )
+add_executable( test_sw6pt test.cpp sw6pt.cpp )
+target_link_libraries( test_sw6pt random_generators )

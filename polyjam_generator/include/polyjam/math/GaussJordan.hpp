@@ -61,12 +61,60 @@ printMatrix( std::vector<std::vector<COEFFICIENT>*> matrix )
 
 template<typename COEFFICIENT>
 void
+saveMatrix(
+    std::vector<std::vector<COEFFICIENT>*> & matrix,
+    const std::string & name,
+    const std::string & save_path )
+{
+  //define some types to make life easier
+  typedef COEFFICIENT coefficient_t;
+  
+  //get the zero constant
+  coefficient_t zero = customGetZero((*(matrix[0]))[0]);
+  coefficient_t precision = customGetPrecision( (*(matrix[0]))[0] );
+  
+  //define some colors
+  cv::Scalar Red( 255, 0, 0 );
+  cv::Scalar DarkRed( 220, 0, 0 );
+  //cv::Scalar Yellow( 255, 255, 0 );
+  cv::Scalar Blue( 0, 0, 255 );
+  //cv::Scalar Purple( 192, 0, 192 );
+
+  //create a white image with correct size
+  int imgWidth = matrix.front()->size();
+  int imgHeight = matrix.size();
+  
+  cv::Mat img( imgHeight, imgWidth, CV_8UC3, cv::Scalar( 0, 0, 0 ) );
+  
+  //set the whole image with the right color
+  for( int row = 0; row < imgHeight; row++ )
+  {
+    for( int col = 0; col < imgWidth; col++ )
+    {
+      cv::Scalar color = Blue;
+      if( !( (*(matrix[row]))[col] == zero ) )
+      //***//if(
+      //***//    ( (*(matrix[row]))[col] < zero && (*(matrix[row]))[col] < precision.negation() ) ||
+      //***//    (*(matrix[row]))[col] > precision )
+      {
+        color = Red;
+        if( col % 2 == 1 )
+          color = DarkRed;
+      }
+      img.at<cv::Vec3b>(row, col)[0] = color[0];
+      img.at<cv::Vec3b>(row, col)[1] = color[1];
+      img.at<cv::Vec3b>(row, col)[2] = color[2];
+    }
+  }
+  
+  cv::imwrite(save_path + name + std::string(".png"), img);
+}
+
+template<typename COEFFICIENT>
+void
 visualizeMatrix(
     std::vector<std::vector<COEFFICIENT>*> & matrix,
-    bool createAndDestroy = true,
-    bool saveImage = false,
-    std::string name = std::string("coefficientMatrix"),
-    std::string save_path = std::string("/tmp") )
+    bool createAndDestroy = true )
 {
   //define some types to make life easier
   typedef COEFFICIENT coefficient_t;
@@ -110,9 +158,20 @@ visualizeMatrix(
   }
   
   //now visualize the image
-  if( saveImage )
-  {
-    cv::imwrite(save_path + name + std::string(".png"), img);
+  std::string name("coefficientMatrix");
+
+  if( createAndDestroy ) {
+    cv::namedWindow(name);
+    cv::startWindowThread();
+  }
+  cv::resizeWindow(name, imgWidth, imgHeight);
+  cv::imshow(name, img);
+  
+  if( createAndDestroy ) {
+    char exit_key_press = 0;
+    while ((int) exit_key_press != 27) // or key != ESC
+      exit_key_press = cv::waitKey(10);
+    cv::destroyWindow(name);
   }
 }
 
@@ -127,7 +186,6 @@ gaussReduction(
 {
   //define some types to make life easier
   typedef COEFFICIENT coefficient_t;
-
   bool consolePrint = false;
   
   //initialize the continuous visualization

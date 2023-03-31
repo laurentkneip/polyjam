@@ -33,14 +33,13 @@ polyjam::generator::methods::experiment(
   bool preVisualization = false;
   CMatrix pe_matrix(polynomials);
   if(visualization && preVisualization)
-    pe_matrix.visualize(true);
+    pe_matrix.visualize();
 
   pe_matrix.reduce();
   if(visualization && preVisualization)
-    pe_matrix.visualize(true);
+    pe_matrix.visualize();
   
-  if( consolePrint )
-  {
+  if( consolePrint ) {
     std::cout << "pre-elimination is done" << std::endl;
     std::cout << "the initial matrix size is: " << pe_matrix.rows() << "x" << pe_matrix.cols() << std::endl;
   }
@@ -50,14 +49,12 @@ polyjam::generator::methods::experiment(
   CMatrix matrix(newPolynomials,equations);
   
   std::list<core::Poly*>::iterator polyIter = newPolynomials.begin();
-  while( polyIter != newPolynomials.end() )
-  {
+  while( polyIter != newPolynomials.end() ) {
     delete *polyIter;
     ++polyIter;
   }
   
-  if( consolePrint )
-  {
+  if( consolePrint ) {
     std::cout << "starting elimination" << std::endl;
     std::cout << "the matrix size is: " << matrix.rows() << "x" << matrix.cols() << std::endl;
   }
@@ -68,8 +65,7 @@ polyjam::generator::methods::experiment(
   if(visualization)
     matrix.visualize();
   
-  if( consolePrint )
-  {
+  if( consolePrint ) {
     std::cout << "elimination is done" << std::endl;
     std::cout << "the matrix size is: " << matrix.rows() << "x" << matrix.cols() << std::endl;
   }
@@ -85,18 +81,14 @@ polyjam::generator::methods::automaticDegreeFinder(
     const core::Monomial & multiplier,
     bool visualization,
     bool consolePrint,
-    bool evenOnly )
-{
+    bool evenOnly ) {
   std::vector<core::Monomial> leadingMonomials;
 
-  for( size_t i = 0; i < baseMonomials.size(); i++ )
-  {
+  for( size_t i = 0; i < baseMonomials.size(); i++ ) {
     core::Monomial temp = baseMonomials[i] * multiplier;
     int index = -1;
-    for( size_t j = 0; j < baseMonomials.size(); j++ )
-    {
-      if( baseMonomials[j] == temp )
-      {
+    for( size_t j = 0; j < baseMonomials.size(); j++ ) {
+      if( baseMonomials[j] == temp ) {
         index = j;
         break;
       }
@@ -105,8 +97,7 @@ polyjam::generator::methods::automaticDegreeFinder(
       leadingMonomials.push_back(temp);
   }
   
-  if( consolePrint )
-  {
+  if( consolePrint ) {
     std::cout << "The leading Monomials that we are interested in are:" << std::endl;
     for( size_t i = 0; i < leadingMonomials.size(); i++ )
       std::cout << leadingMonomials[i].getString(false) << std::endl;
@@ -116,8 +107,7 @@ polyjam::generator::methods::automaticDegreeFinder(
   if(evenOnly)
     expanderDegree = 0;
   bool allFound = false;
-  while( !allFound )
-  {
+  while( !allFound ) {
     allFound = true;
     if(evenOnly)
       expanderDegree += 2;
@@ -127,32 +117,26 @@ polyjam::generator::methods::automaticDegreeFinder(
       std::cout << "Trying out degree " << expanderDegree << std::endl;
     
     std::vector<core::Monomial> currentExpanders;
-    if(evenOnly)
-    {
+    if(evenOnly) {
       methods::generateEvendegreeExpanders(expanders,currentExpanders,expanderDegree);
-    }
-    else
-    {
+    } else {
       currentExpanders = expanders;
       methods::generateSuperlinearExpanders(currentExpanders,expanderDegree);
     }
     CMatrix attempt = experiment(polynomials,currentExpanders,visualization,false);
     if(consolePrint)
       std::cout << "Template size: " << attempt.rows() << "x" << attempt.cols() << std::endl;
-    std::list<core::Poly*> polys = attempt.getPolynomials();
+    CMatrix::polynomials_t polys = attempt.getPolynomials();
     
     //Now check if all polynomials have been found correctly
-    for( size_t i = 0; i < leadingMonomials.size(); i++ )
-    {
+    for( size_t i = 0; i < leadingMonomials.size(); i++ ) {
       core::Monomial & leadingMonomial = leadingMonomials[i];
       bool found = false;
       
       std::list<core::Poly*>::iterator polysIterator = polys.begin();
       
-      while( polysIterator != polys.end() )
-      {
-        if( leadingMonomial == (*polysIterator)->leadingTerm().monomial() )
-        {
+      while( polysIterator != polys.end() ) {
+        if( leadingMonomial == (*polysIterator)->leadingTerm().monomial() ) {
           bool allOtherContained = true;
           core::Poly::terms_t::iterator monoIter = (*polysIterator)->begin();
           monoIter++;
@@ -161,17 +145,14 @@ polyjam::generator::methods::automaticDegreeFinder(
             bool contained = false;
             
             //check this monomial
-            for( size_t j = 0; j < baseMonomials.size(); j++ )
-            {
-              if( monoIter->monomial() == baseMonomials[j] )
-              {
+            for( size_t j = 0; j < baseMonomials.size(); j++ ) {
+              if( monoIter->monomial() == baseMonomials[j] ) {
                 contained = true;
                 break;
               }
             }
             
-            if( !contained )
-            {
+            if( !contained ) {
               allOtherContained = false;
               break;
             }
@@ -179,8 +160,7 @@ polyjam::generator::methods::automaticDegreeFinder(
             monoIter++;
           }
           
-          if( allOtherContained )
-          {
+          if( allOtherContained ) {
             found = true;
             break;
           }
@@ -189,17 +169,15 @@ polyjam::generator::methods::automaticDegreeFinder(
         polysIterator++;
       }
       
-      if( !found )
-      {
+      if( !found ) {
         std::cout << "Did not find all monomials." << std::endl;
         allFound = false;
         break;
       }
     }
     
-    std::list<core::Poly*>::iterator polysIterator = polys.begin();
-    while( polysIterator != polys.end() )
-    {
+    auto polysIterator = polys.begin();
+    while( polysIterator != polys.end() ) {
       delete (*polysIterator);
       polysIterator++;
     }
@@ -220,9 +198,24 @@ polyjam::generator::methods::generate(
     const std::string & codeFile,
     const std::string & solverName,
     const std::string & parameters,
-    bool visualize,
-    const std::string save_path )
+    const std::string & save_path,
+    bool visualize )
 {
+  /////////////////////////////
+  //general configuration for additional saved data
+  /////////////////////////////
+  bool saveBeforePreElimination = false; // this is useful for a hand-crafted pre-elimination
+  bool saveAfterPreElimination = false;  // this is useful for a hand-crafted pre-elimination
+  bool saveBeforeElimination = false;    // this is useful for a hand-crafted pre-elimination
+  bool saveAfterElimination = false;     // this is useful if the some manual code is required because Action matrix won't work
+  bool savePolynomials = false;          // this is useful if the some manual code is required because Action matrix won't work
+  bool saveMonomials = false;            // this is useful if the some manual code is required because Action matrix won't work
+
+  bool useGaussJordan = false;
+  /////////////////////////////
+  /////////////////////////////
+  /////////////////////////////
+
   std::stringstream code;
   
   //setup the actual pre-elimination matrix
@@ -238,10 +231,8 @@ polyjam::generator::methods::generate(
   code << M1type.str() << " M1(" << M1rows << "," << M1cols << ");" << std::endl;
   code << "M1.fill(0.0);" << std::endl;
 
-  for( int r = 0; r < M1rows; r++ )
-  {
-    for( int c = 0; c < M1cols; c++ )
-    {
+  for( int r = 0; r < M1rows; r++ ) {
+    for( int c = 0; c < M1cols; c++ ) {
       if( !pe_helper(r,c).isZero() )
         code << "M1(" << r << "," << c << ") = " << pe_helper(r,c).getString(true) << "; ";
     }
@@ -251,18 +242,97 @@ polyjam::generator::methods::generate(
 
   // save the pre-elimination as pictures
   if( visualize )
-    pe_matrix.visualize( true, std::string("M1Before"), save_path );
-  pe_matrix.reduce();
-  if( visualize )
-    pe_matrix.visualize( true, std::string("M1after"), save_path );
+    pe_matrix.visualize();
+  if( saveBeforePreElimination )
+    pe_matrix.save( std::string("M1before"), save_path );
 
-  std::list<core::Poly*> zp_polynomials  = pe_matrix.getPolynomials();
-  //std::list<core::Poly*> sym_polynomials = pe_matrix.getSymbolicPolynomials( std::string("M1") );
-  std::list<core::Poly*> sym_polynomials = pe_matrix.getSymbolicPolynomials2();
-  //code << "polyjam::math::gaussReduction(M1);" << std::endl << std::endl;
-  code << "Eigen::Matrix<double," << M1rows << "," << M1rows << "> temp = M1.topLeftCorner(" << M1rows << "," << M1rows << ").inverse();\n";
-  code << "Eigen::Matrix<double," << M1rows << "," << M1rows << "> temp2 = temp * M1;\n"; 
-  code << "M1 = temp2;\n\n";
+  pe_matrix.reduce();
+  
+  if( visualize )
+    pe_matrix.visualize();
+  if( saveAfterPreElimination )
+    pe_matrix.save( std::string("M1after"), save_path );
+
+  CMatrix::polynomials_t zp_polynomials  = pe_matrix.getPolynomials();
+  //CMatrix::polynomials_t sym_polynomials = pe_matrix.getSymbolicPolynomials( std::string("M1") );
+  CMatrix::polynomials_t sym_polynomials = pe_matrix.getSymbolicPolynomials2();
+  
+  if(useGaussJordan) {
+    code << "polyjam::gaussReduction(M1);" << std::endl << std::endl;
+  } else {
+    //Gauss reduction may be not stable, due to the numerics it may do something else than what we expect
+
+    //start by extracting the reordering indices
+    CMatrix::monomials_t monomials = pe_matrix.monomials();
+    std::vector<int> shufflingIndices;
+
+    //start by the leading ones
+    auto it = zp_polynomials.begin();
+    while( it != zp_polynomials.end() ) {
+      core::Monomial leadingMonomial = (*it)->leadingMonomial().monomial();
+
+      auto it2 = monomials.begin();
+      int counter = 0;
+      while( it2 != monomials.end() ) {
+        if( (*it2) == leadingMonomial ) {
+          shufflingIndices.push_back(counter);
+          break;
+        }
+        counter++;
+        it2++;
+      }
+
+      it++;
+    }
+
+    //Now follow up with the remaining ones
+    for( int i = 0; i < M1cols; i++ ) {
+      bool found = false;
+      for( int j = 0; j < shufflingIndices.size(); j++ ) {
+        if( i == shufflingIndices[j] ) {
+          found = true;
+          break;
+        }
+      }
+      if(!found)
+        shufflingIndices.push_back(i);
+    }
+
+    //Add the code for the reordering of the matrix
+    code << "//swap the columns to have the leading monomials in the front" << std::endl;
+    code << M1type.str() << " M1temp(" << M1rows << "," << M1cols << ");" << std::endl;
+    for( int i = 0; i < shufflingIndices.size(); i++ )
+      code << "M1temp.col(" << i << ") = M1.col(" << shufflingIndices[i] << ");" << std::endl;
+    code << std::endl;
+
+    //Add the actual elimination
+    if( zp_polynomials.size() < M1rows ) {
+      //this is the complicated case of over determination
+
+      int M1rows2 = zp_polynomials.size();
+      code << "//Use the pseudo-inverse to replace the Gauss-Jordan elimination (this here is the over determined case)" << std::endl;
+      code << "Eigen::Matrix<double," << M1rows2 << "," << M1cols << "> P = M1temp.block<" << M1rows << "," << M1rows2 << ">(0,0).transpose() * M1temp;" << std::endl;
+      code << "Eigen::PartialPivLU< Eigen::Matrix<double," << M1rows2 << "," << M1rows2 << "> > lupre(P.block<" << M1rows2 << "," << M1rows2 << ">(0,0));" << std::endl;
+      code << "M1temp.block<" << M1rows2 << "," << (M1cols - M1rows2) << ">(0," << M1rows2 << ") = lupre.solve(P.block<" << M1rows2 << "," << (M1cols - M1rows2) << ">(0," << M1rows2 << "));" << std::endl;
+      code << "M1temp.block<" << M1rows2 << "," << M1rows2 << ">(0,0) = Eigen::MatrixXd::Identity(" << M1rows2 << "," << M1rows2 << ");" << std::endl;
+      code << "M1temp.block<" << (M1rows - M1rows2) << "," << M1cols << ">(" << M1rows2 << ",0) = Eigen::MatrixXd::Zero(" << (M1rows - M1rows2) << "," << M1cols << ");" << std::endl;
+      code << std::endl;
+
+    } else {
+
+      //This here is the old part, but it is not stable because it does not care about the row-echelon structure, and also abotu the question whether or not the system is overdetermined
+      code << "Eigen::Matrix<double," << M1rows << "," << M1rows << "> temp = M1temp.topLeftCorner(" << M1rows << "," << M1rows << ").inverse();\n";
+      code << "Eigen::Matrix<double," << M1rows << "," << M1cols << "> temp2 = temp * M1temp;\n";
+      code << "M1temp = temp2;\n\n";
+
+    }
+
+    //Now add the code for swapping back
+    code << "//Swap the columns back to the original form" << std::endl;
+    for( int i = 0; i < shufflingIndices.size(); i++ )
+      code << "M1.col(" << shufflingIndices[i] << ") = M1temp.col(" << i << ");" << std::endl;
+    code << std::endl;
+  }
 
   std::cout << "Pre-elimination is done." << std::endl;
 
@@ -410,24 +480,20 @@ polyjam::generator::methods::generate(
   
   //once we are done with that, we should identify the leading monomials, and reorder the monomials
   std::cout << "Reordering the monomials." << std::endl;
-  std::list<core::Poly*> finalPolynomials = final_matrix.getPolynomials();
+  CMatrix::polynomials_t finalPolynomials = final_matrix.getPolynomials();
   
-  std::vector<core::Monomial> finalMonomials;
-  std::list<core::Poly*>::iterator p = finalPolynomials.begin();
-  while( p != finalPolynomials.end() )
-  {
+  CMatrix::monomials_t finalMonomials;
+  auto p = finalPolynomials.begin();
+  while( p != finalPolynomials.end() ) {
     finalMonomials.push_back((**p).leadingTerm().monomial());
     ++p;
   }
-  std::vector<core::Monomial> intMonomials = final_matrix.monomials();
-  for( size_t i = 0; i < intMonomials.size(); i++ )
-  {
+  CMatrix::monomials_t intMonomials = final_matrix.monomials();
+  for( size_t i = 0; i < intMonomials.size(); i++ ) {
     core::Monomial temp = intMonomials[i];
     bool found = false;
-    for( size_t j = 0; j < finalMonomials.size(); j++ )
-    {
-      if( temp == finalMonomials[j] )
-      {
+    for( size_t j = 0; j < finalMonomials.size(); j++ ) {
+      if( temp == finalMonomials[j] ) {
         found = true;
         break;
       }
@@ -445,8 +511,7 @@ polyjam::generator::methods::generate(
   for( int i = 0; i < test_matrix_temp.rows(); i++ )
     preIndices.push_back(i);
   int currentCol = 0;
-  while( !preIndices.empty() )
-  {
+  while( !preIndices.empty() ) {
     std::vector<int>::iterator nonzeroSearcher = preIndices.begin();
     while( nonzeroSearcher != preIndices.end() )
     {
@@ -469,29 +534,41 @@ polyjam::generator::methods::generate(
   CMatrix test_matrix( zp_polynomials, finalMonomials, finalReorderedEquations );
   if(visualize)
     test_matrix.visualize();
+  if(saveBeforeElimination)
+    test_matrix.save( std::string("M2before"), save_path );
   test_matrix.reduce();
   if(visualize)
-    test_matrix.visualize( true, std::string("M2after"), save_path ); //put true here to save the final matrix (useful if not using the action matrix method)
+    test_matrix.visualize();
+  if(saveAfterElimination)
+    test_matrix.save( std::string("M2after"), save_path );
 
-  if(visualize) {
-    //use this block here in order to print the polynomials into the console:
-    std::cout << "Printing all polynomials into the console" << std::endl;
-    std::list<core::Poly*> printPolys = test_matrix.getPolynomials();
-    std::list<core::Poly*>::iterator ititit = printPolys.begin();
+  if(savePolynomials) {
+    //use this block here in order to print the polynomials into a file
+    std::ofstream polynomialsFile;
+    polynomialsFile.open( (save_path + std::string("polynomials.txt")).c_str() );
+    polynomialsFile << "Printing all polynomials into the console" << std::endl;
+    CMatrix::polynomials_t printPolys = test_matrix.getPolynomials();
+    auto ititit = printPolys.begin();
     while( ititit != printPolys.end() ) {
-      (*ititit)->print();
+      polynomialsFile << (*ititit)->getString(false);
       ititit++;
     }
-    std::cout << std::endl;
+    polynomialsFile << std::endl;
+    polynomialsFile.close();
+  }
 
-    //use this block here to print all the monomials into the console
-    std::cout << "Printing all monomials into the console" << std::endl;
+  if(saveMonomials) {
+    //use this block here to print all the monomials into a file
+    std::ofstream monomialsFile;
+    monomialsFile.open( (save_path + std::string("monomials.txt")).c_str() );
+    monomialsFile << "Printing all monomials into the console" << std::endl;
     for( int i = 0; i < finalMonomials.size(); i++ )
     {
-      finalMonomials[i].print();
-      std::cout << std::endl;
+      monomialsFile << finalMonomials[i].getString(false);
+      monomialsFile << std::endl;
     }
-    std::cout << std::endl;
+    monomialsFile << std::endl;
+    monomialsFile.close();
   }
   
   std::cout << "Extracting the code" << std::endl;
@@ -561,7 +638,7 @@ polyjam::generator::methods::generate(
   
   int unknownNbr = baseMonomials[0].dimensions();
   std::stringstream solutionsType;
-  solutionsType << "std::vector< Eigen::Matrix<double," << unknownNbr << ",1>>";
+  solutionsType << "std::vector< Eigen::Matrix<double," << unknownNbr << ",1> >";
   std::stringstream Actiontype;
   Actiontype << "Eigen::Matrix<double," << solNbr << "," << solNbr << ">";
   code << Actiontype.str() << " Action = " << Actiontype.str() << "::Zero();" << std::endl;
@@ -661,6 +738,138 @@ polyjam::generator::methods::generate(
   file << "#include \"" << solverName << ".hpp\"" << std::endl;
   file << std::endl;
   file << std::endl;
+  if( useGaussJordan ) {
+    file << "void" << std::endl;
+    file << "polyjam::gaussReduction( Eigen::MatrixXd & matrix ) {" << std::endl;
+    file << std::endl;
+    file << "  //create some constant for zero-checking etc." << std::endl;
+    file << "  double precision = 0.0000000001;" << std::endl;
+    file << "  " << std::endl;
+    file << "  int rows = matrix.rows();" << std::endl;
+    file << "  int cols = matrix.cols();" << std::endl;
+    file << "  int maxIndentation = cols-1;" << std::endl;
+    file << "  " << std::endl;
+    file << "  //first compute the number of steps to do" << std::endl;
+    file << "  int steps = rows;" << std::endl;
+    file << "  if( rows > cols )" << std::endl;
+    file << "    steps = cols;" << std::endl;
+    file << "  " << std::endl;
+    file << "  //working variables" << std::endl;
+    file << "  int currentIndentation = 0;" << std::endl;
+    file << "  int frontRow = 0;" << std::endl;
+    file << "  " << std::endl;
+    file << "  //first step down" << std::endl;
+    file << "  for( int dummy = 0; dummy < steps; dummy++ )" << std::endl;
+    file << "  {" << std::endl;
+    file << "    // first iterate through the rows and find a row that has a" << std::endl;
+    file << "    // non-zero coefficient in the relevant column" << std::endl;
+    file << "    " << std::endl;
+    file << "    int row;" << std::endl;
+    file << "    " << std::endl;
+    file << "    while(currentIndentation <= maxIndentation)" << std::endl;
+    file << "    {" << std::endl;
+    file << "      double maxValue = -1.0;" << std::endl;
+    file << "      " << std::endl;
+    file << "      for( int tempRow = frontRow; tempRow < rows; tempRow++ )" << std::endl;
+    file << "      {" << std::endl;
+    file << "        double value = fabs(matrix(tempRow,currentIndentation));" << std::endl;
+    file << "        if( value > maxValue )" << std::endl;
+    file << "        {" << std::endl;
+    file << "          row = tempRow;" << std::endl;
+    file << "          maxValue = value;" << std::endl;
+    file << "        }" << std::endl;
+    file << "      }" << std::endl;
+    file << "      " << std::endl;
+    file << "      //if, after checking this column, we found a non-zero element, we are done" << std::endl;
+    file << "      if(maxValue > precision)" << std::endl;
+    file << "        break;" << std::endl;
+    file << "      " << std::endl;
+    file << "      //if not, we have to move on to the next column" << std::endl;
+    file << "      currentIndentation++;" << std::endl;
+    file << "    }" << std::endl;
+    file << "    " << std::endl;
+    file << "    //if we are beyond the maxIndentation, the whole rest is zero. Break!" << std::endl;
+    file << "    if(currentIndentation > maxIndentation)" << std::endl;
+    file << "      break;" << std::endl;
+    file << "    " << std::endl;
+    file << "    //row is now the row that should go in the place of frontRow->swap" << std::endl;
+    file << "    Eigen::MatrixXd rowCopy = matrix.row(row);" << std::endl;
+    file << "    matrix.row(row) = matrix.row(frontRow);" << std::endl;
+    file << "    matrix.row(frontRow) = rowCopy;" << std::endl;
+    file << "    " << std::endl;
+    file << "    //ok, now use frontRow!" << std::endl;
+    file << "    int col = currentIndentation;" << std::endl;
+    file << "    double leadingCoefficient = matrix(frontRow,col);" << std::endl;
+    file << "    matrix.row(frontRow) /= leadingCoefficient;" << std::endl;
+    file << "    " << std::endl;
+    file << "    //iterate through all remaining rows, and subtract correct multiple of " << std::endl;
+    file << "    //first row (if leading coefficient is non-zero!)" << std::endl;
+    file << "    row = frontRow;" << std::endl;
+    file << "    ++row;" << std::endl;
+    file << "    while( row < rows )" << std::endl;
+    file << "    {" << std::endl;
+    file << "      double leadingCoefficient = matrix(row,currentIndentation);" << std::endl;
+    file << "      if( fabs(leadingCoefficient) > precision )" << std::endl;
+    file << "        matrix.row(row) -= leadingCoefficient * matrix.row(frontRow);" << std::endl;
+    file << "      ++row;" << std::endl;
+    file << "    }" << std::endl;
+    file << "    " << std::endl;
+    file << "    //increment row and currentIndentation" << std::endl;
+    file << "    ++frontRow;" << std::endl;
+    file << "    currentIndentation++;" << std::endl;
+    file << "    if( currentIndentation > maxIndentation )" << std::endl;
+    file << "      break;" << std::endl;
+    file << "  }" << std::endl;
+    file << "  " << std::endl;
+    file << "  //if the following, this is the zero matrix -> nothing to do!" << std::endl;
+    file << "  if( frontRow == 0 )" << std::endl;
+    file << "    return;" << std::endl;
+    file << "  " << std::endl;
+    file << "  //actually, everything starting from frontRow should be zero -> delete" << std::endl;
+    file << "  Eigen::MatrixXd croppedMatrix = matrix.block(0,0,frontRow,cols);" << std::endl;
+    file << "  matrix = croppedMatrix;" << std::endl;
+    file << "  " << std::endl;
+    file << "  //set index to the last non-zero row" << std::endl;
+    file << "  --frontRow;" << std::endl;
+    file << "  " << std::endl;
+    file << "  //Now step up" << std::endl;
+    file << "  while( frontRow != 0 )" << std::endl;
+    file << "  {" << std::endl;  
+    file << "    //indent until we find a non-zero element in frontRow" << std::endl;
+    file << "    int indentations = 0;" << std::endl;
+    file << "    while( fabs(matrix(frontRow,indentations)) < precision && indentations < cols )" << std::endl;
+    file << "      indentations++;" << std::endl;
+    file << "    " << std::endl;
+    file << "    //if the following, there is a problem, maybe zero-matrix!" << std::endl;
+    file << "    if( indentations == cols )" << std::endl;
+    file << "      break;" << std::endl;
+    file << "    " << std::endl;
+    file << "    //get the working row" << std::endl;
+    file << "    int row = frontRow;" << std::endl;
+    file << "    " << std::endl;
+    file << "    do" << std::endl;
+    file << "    {" << std::endl;
+    file << "      //decrement working row" << std::endl;
+    file << "      --row;" << std::endl;
+    file << "      " << std::endl;
+    file << "      //working column" << std::endl;
+    file << "      " << std::endl;
+    file << "      //now get the leading coefficient" << std::endl;
+    file << "      double leadingCoefficient = matrix(row,indentations);" << std::endl;
+    file << "      " << std::endl;
+    file << "      //Now iterator until the end, and subtract each time the multiplied" << std::endl;
+    file << "      //front-row" << std::endl;
+    file << "      if( fabs(leadingCoefficient) > precision )" << std::endl;
+    file << "        matrix.row(row) -= leadingCoefficient * matrix.row(frontRow);" << std::endl;
+    file << "    }" << std::endl;
+    file << "    while( row != 0 );" << std::endl;
+    file << "    " << std::endl;
+    file << "    --frontRow;" << std::endl;
+    file << "  }" << std::endl;
+    file << "}" << std::endl;
+    file << std::endl;
+    file << std::endl;
+  }
   file << "void" << std::endl;
   file << "polyjam::" << solverName << "::initRow(" << std::endl;
   file << "    " << M2type.str() << " & M2," << std::endl;
@@ -731,6 +940,13 @@ polyjam::generator::methods::generate(
   header << std::endl;
   header << "namespace polyjam" << std::endl;
   header << "{" << std::endl;
+
+  if( useGaussJordan ) {
+    header << std::endl;
+    header << "void gaussReduction( Eigen::MatrixXd & matrix );" << std::endl;
+    header << std::endl;
+  }
+
   header << "namespace " << solverName << std::endl;
   header << "{" << std::endl;
   header << std::endl;

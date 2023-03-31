@@ -1,7 +1,7 @@
 #include <polyjam/polyjam.hpp>
 
-int main( int argc, char** argv )
-{  
+int main( int argc, char** argv ) {
+
   //initialize the random generator
   initGenerator();
   size_t nu = 6; //the number of unknowns in the problem
@@ -150,5 +150,5 @@ int main( int argc, char** argv )
 
   //****** Part 5: generate the solver ********************//
 
-  execGenerator( eqs, string("gen3pt"), string("std::vector<Eigen::Vector3d> & fs, std::vector<Eigen::Vector3d> & vs, std::vector<Eigen::Vector3d> & wps"), true, "." );
+  execGenerator( eqs, string("gen3pt"), string("std::vector<Eigen::Vector3d> & fs, std::vector<Eigen::Vector3d> & vs, std::vector<Eigen::Vector3d> & wps"), true );
 }

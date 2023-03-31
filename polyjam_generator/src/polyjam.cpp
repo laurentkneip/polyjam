@@ -42,13 +42,13 @@ polyjam::initGenerator()
 }
 
 void
-polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const string & parameters, bool visualize, const string & save_path )
+polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const string & parameters, bool visualize )
 {
-  execGenerator(eqs, solverName, std::string(""), parameters, visualize, save_path);
+  execGenerator(eqs, solverName, std::string(""), parameters, visualize );
 }
 
 void
-polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const string & suffix, const string & parameters, bool visualize, const string & save_path )
+polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const string & suffix, const string & parameters, bool visualize )
 {
   //the goal of this function is to split up the polynomials into symbolic and finite field ones
   list<Poly*> eqs_zp;
@@ -69,24 +69,23 @@ polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const stri
   }
 
   //done, call the original execGenerator
-  execGenerator( eqs_zp, eqs_sym, solverName, suffix, parameters, visualize, save_path );
+  execGenerator( eqs_zp, eqs_sym, solverName, suffix, parameters, visualize );
 }
 
 void
-polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & parameters, bool visualize, const string & save_path )
+polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & parameters, bool visualize )
 {
-  execGenerator(eqs, eqs_sym, solverName, std::string(""), parameters, visualize, save_path);
+  execGenerator(eqs, eqs_sym, solverName, std::string(""), parameters, visualize );
 }
 
 void
-polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & suffix, const string & parameters, bool visualize, const string & save_path )
+polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & suffix, const string & parameters, bool visualize )
 {
   //create a list of monomials for all the unknowns (those will expand the original system of equations)
   vector<Monomial> expanders;
   int nu = eqs.front()->leadingTerm().monomial().dimensions();
   vector<unsigned int> exponents(nu,0);
-  for( int i = 0; i < nu; i++ )
-  {
+  for( int i = 0; i < nu; i++ ) {
     exponents[i] = 1;
     expanders.push_back( Monomial(exponents) );
     exponents[i] = 0;
@@ -99,8 +98,7 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
   subdir << WORKSPACEPATH << solverName << "/M2script";
 
   struct stat info;
-  if( stat( subdir.str().c_str(), &info ) != 0 )
-  {
+  if( stat( subdir.str().c_str(), &info ) != 0 ) {
     stringstream dircmd;
     dircmd << "mkdir " << subdir.str();
     system(dircmd.str().c_str());
@@ -157,8 +155,7 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
   for( size_t i = 0; i < baseMonomials_temp.size(); i++ )
     orderingPolynomial += Term( c1.leadingTerm().coefficient().clone(), baseMonomials_temp[i] );
   Poly::terms_t::iterator it2 = orderingPolynomial.begin();
-  while( it2 != orderingPolynomial.end() )
-  {
+  while( it2 != orderingPolynomial.end() ) {
     baseMonomials.push_back( it2->monomial() );
     it2++;
   }
@@ -178,16 +175,14 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
 
   //generate sub-directory if it does not exist
   stringstream subdir2;
-  if(suffix.empty()){
+  if(suffix.empty()) {
     subdir2 << SOLVERPATH << solverName;
-  }
-  else{
+  }else{
     subdir2 << SOLVERPATH << solverName << "_" << suffix;
   }
 
   struct stat info2;
-  if( stat( subdir2.str().c_str(), &info2 ) != 0 )
-  {
+  if( stat( subdir2.str().c_str(), &info2 ) != 0 ) {
     stringstream dircmd;
     dircmd << "mkdir " << subdir2.str();
     system(dircmd.str().c_str());
@@ -195,31 +190,25 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
 
   std::cout << "Starting the solver generation." << std::endl;
   stringstream codeFile;
-  if(save_path != ""){
-    codeFile << save_path << solverName << ".cpp";
-  }
-  else if(suffix.empty()){
+  if(suffix.empty()){
     codeFile << SOLVERPATH << solverName << "/" << solverName << ".cpp";
-  }
-  else{
+  } else {
     codeFile << SOLVERPATH << solverName << "/" << solverName << "_" << suffix << ".cpp";
   }
   stringstream headerFile;
-  if(save_path != ""){
-    headerFile << save_path << solverName << ".hpp";
-  }
-  else if(suffix.empty()){
+  if(suffix.empty()){
     headerFile << SOLVERPATH << solverName << "/" << solverName << ".hpp";
-  }
-  else{
+  } else {
     headerFile << SOLVERPATH << solverName << "/" << solverName << "_" << suffix << ".hpp";
   }
 
+  stringstream savePathSS;
+  savePathSS << SOLVERPATH << solverName << "/";
+
   if(suffix.empty()){
-    methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), (solverName), parameters, visualize , save_path);
-  }
-  else{
-    methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), (solverName + "_" + suffix), parameters, visualize , save_path );
+    methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), (solverName), parameters, savePathSS.str(), visualize);
+  } else {
+    methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), (solverName + "_" + suffix), parameters, savePathSS.str(), visualize );
   }
 }
 
