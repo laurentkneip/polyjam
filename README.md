@@ -1,4 +1,4 @@
-# Eventail-polyjam
+# Polyjam
 
 **library**: polyjam
 
