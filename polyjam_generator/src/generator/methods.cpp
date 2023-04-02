@@ -320,7 +320,7 @@ polyjam::generator::methods::generate(
 
     } else {
 
-      //This here is the old part, but it is not stable because it does not care about the row-echelon structure, and also abotu the question whether or not the system is overdetermined
+      //This here is the old version, which only works if the system is not over-determined
       code << "Eigen::Matrix<double," << M1rows << "," << M1rows << "> temp = M1temp.topLeftCorner(" << M1rows << "," << M1rows << ").inverse();\n";
       code << "Eigen::Matrix<double," << M1rows << "," << M1cols << "> temp2 = temp * M1temp;\n";
       code << "M1temp = temp2;\n\n";
@@ -414,7 +414,7 @@ polyjam::generator::methods::generate(
     //std::cout << "Removed " << removed.size() << " expanders. Now computing the polynomials." << std::endl;
     
     //now check if all required polynomials are still around
-    //copy the correct rows of _origMatrix, and perform gaussReduction
+    //copy the corresponding rows, and perform gaussReduction
     CMatrix subMatrix = big_matrix.subMatrix(usedEquations);
     subMatrix.reduce();
     
@@ -464,7 +464,7 @@ polyjam::generator::methods::generate(
   
   std::cout << "Removing unused monomials." << std::endl;
 
-  //ok, now we have to redo the computation such that _origMonomials contains only the present monomials
+  //ok, now we have to redo the computation such that we use only the final equations and monomials
   std::vector<std::pair<int,core::Monomial> > finalEquations;
   for( std::list<int>::iterator i = usedEquations.begin(); i != usedEquations.end(); i++ )
     finalEquations.push_back(equations[*i]);
