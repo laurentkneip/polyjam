@@ -50,25 +50,8 @@ polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const stri
 void
 polyjam::execGenerator( list<Poly*> & eqs, const string & solverName, const string & suffix, const string & parameters, bool visualize )
 {
-  //the goal of this function is to split up the polynomials into symbolic and finite field ones
-  list<Poly*> eqs_zp;
-  list<Poly*> eqs_sym;
-
-  list<Poly*>::iterator it = eqs.begin();
-  while( it != eqs.end() )
-  {
-    //the first coefficient in each term is the Zp one
-    //the second coefficient in each term is the symbolic one
-
-    (*it)->setDominant(0); //-> activate the Zp one
-    eqs_zp.push_back(new Poly( (*it)->clone(false) )); //-> clone, but only dominant part
-    (*it)->setDominant(1); //-> activate the Zp one
-    eqs_sym.push_back(new Poly( (*it)->clone(false) )); //-> clone, but only dominant part
-
-    it++;
-  }
-
-  //done, call the original execGenerator
+  list<Poly*> eqs_zp, eqs_sym;
+  splitPolyLists(eqs, eqs_zp, eqs_sym);
   execGenerator( eqs_zp, eqs_sym, solverName, suffix, parameters, visualize );
 }
 
@@ -81,16 +64,6 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
 void
 polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & suffix, const string & parameters, bool visualize )
 {
-  //create a list of monomials for all the unknowns (those will expand the original system of equations)
-  vector<Monomial> expanders;
-  int nu = eqs.front()->leadingTerm().monomial().dimensions();
-  vector<unsigned int> exponents(nu,0);
-  for( int i = 0; i < nu; i++ ) {
-    exponents[i] = 1;
-    expanders.push_back( Monomial(exponents) );
-    exponents[i] = 0;
-  }
-
   std::cout << "Analysing the Groebner basis in Macaulay2 ..." << std::endl;
 
   //export the Zp equations to a Macaulay2 script
@@ -146,6 +119,7 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
 
   //now extract the basis monomials from this string
   std::vector<Monomial> baseMonomials_temp;
+  int nu = (*eqs.begin())->leadingTerm().monomial().dimensions();
   extractMonomials(macaulayOutput,baseMonomials_temp,nu);
 
   //now sort the base monomials
@@ -160,18 +134,70 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
     it2++;
   }
 
+  execGeneratorInternal(false,eqs,eqs_sym,-1,baseMonomials,solverName,suffix,parameters,visualize);
+}
+
+void
+polyjam::execGeneratorSym( list<Poly*> & eqs, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & parameters, bool visualize ) {
+  execGeneratorSym(eqs, expanderDegree, baseMonomials, solverName, std::string(""), parameters, visualize );
+}
+
+void
+polyjam::execGeneratorSym( list<Poly*> & eqs, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & suffix, const string & parameters, bool visualize )
+{
+  list<Poly*> eqs_zp, eqs_sym;
+  splitPolyLists(eqs, eqs_zp, eqs_sym);
+  execGeneratorSym( eqs_zp, eqs_sym, expanderDegree, baseMonomials, solverName, suffix, parameters, visualize );
+}
+
+void
+polyjam::execGeneratorSym( list<Poly*> & eqs, list<Poly*> & eqs_sym, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & parameters, bool visualize ) {
+  execGeneratorSym(eqs, eqs_sym, expanderDegree, baseMonomials, solverName, std::string(""), parameters, visualize );
+}
+
+void
+polyjam::execGeneratorSym( list<Poly*> & eqs, list<Poly*> & eqs_sym, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & suffix, const string & parameters, bool visualize ) {
+  execGeneratorInternal(true,eqs,eqs_sym,expanderDegree,baseMonomials,solverName,suffix,parameters,visualize);
+}
+
+
+
+void
+polyjam::execGeneratorInternal( bool even, list<Poly*> & eqs, list<Poly*> & eqs_sym, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & suffix, const string & parameters, bool visualize )
+{
+  //create a list of monomials for all the unknowns (those will expand the original system of equations)
+  vector<Monomial> expanders;
+  int nu = eqs.front()->leadingTerm().monomial().dimensions();
+  vector<unsigned int> exponents(nu,0);
+  for( int i = 0; i < nu; i++ ) {
+    exponents[i] = 1;
+    expanders.push_back( Monomial(exponents) );
+    exponents[i] = 0;
+  }
+
   //create the action variable
   vector<unsigned int> action(nu,0);
-  action.back() = 1;
+  if(even)
+    action.back() = 2;
+  else
+    action.back() = 1;
   Monomial multiplier(action);
 
-  std::cout << "Finding the degree of expansion." << std::endl;
-  int expanderDegree = methods::automaticDegreeFinder(
-      eqs, expanders, baseMonomials, multiplier, visualize, true );
-
-  std::cout << "Generating the super-linear expanders." << std::endl;
   //generate all expander based on the degree, and generate the solver
-  methods::generateSuperlinearExpanders(expanders,expanderDegree);
+  std::cout << "Generating the super-linear expanders." << std::endl;
+  if(even) {
+    std::vector<Monomial> expanders2;
+    methods::generateEvendegreeExpanders(expanders,expanders2,expanderDegree);
+    expanders = expanders2;
+  } else {
+    //if expanderDegree is less than 0, it means that we have to find it automatically
+    if( expanderDegree < 0 ) {
+      std::cout << "Finding the degree of expansion." << std::endl;
+      expanderDegree = methods::automaticDegreeFinder(
+          eqs, expanders, baseMonomials, multiplier, visualize, true );
+    }
+    methods::generateSuperlinearExpanders(expanders,expanderDegree);
+  }
 
   //generate sub-directory if it does not exist
   stringstream subdir2;
@@ -209,6 +235,23 @@ polyjam::execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string &
     methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), (solverName), parameters, savePathSS.str(), visualize);
   } else {
     methods::generate( eqs, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), (solverName + "_" + suffix), parameters, savePathSS.str(), visualize );
+  }
+}
+
+void
+polyjam::splitPolyLists( list<Poly*> & eqs, list<Poly*> & eqs_zp, list<Poly*> & eqs_sym ) {
+  list<Poly*>::iterator it = eqs.begin();
+  while( it != eqs.end() )
+  {
+    //the first coefficient in each term is the Zp one
+    //the second coefficient in each term is the symbolic one
+
+    (*it)->setDominant(0); //-> activate the Zp one
+    eqs_zp.push_back(new Poly( (*it)->clone(false) )); //-> clone, but only dominant part
+    (*it)->setDominant(1); //-> activate the Zp one
+    eqs_sym.push_back(new Poly( (*it)->clone(false) )); //-> clone, but only dominant part
+
+    it++;
   }
 }
 

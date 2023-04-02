@@ -23,7 +23,4 @@ find_package(Eigen REQUIRED)
 
 include_directories(${EIGEN_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIR}/unsupported ${PROJECT_SOURCE_DIR}/include)
 
-add_library( random_generators SHARED random_generators.cpp random_generators.hpp time_measurement.cpp time_measurement.hpp )
-
 add_executable( test_sw6pt test.cpp sw6pt.cpp )
-target_link_libraries( test_sw6pt random_generators )

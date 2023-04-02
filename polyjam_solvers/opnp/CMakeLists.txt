@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
-project(test_gen3pt)
+project(test_opnp2)
 
 # Set the build type.  Options are:
 #
@@ -23,4 +23,4 @@ find_package(Eigen REQUIRED)
 
 include_directories(${EIGEN_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIR}/unsupported ${PROJECT_SOURCE_DIR}/include)
 
-add_executable( test_gen3pt test.cpp gen3pt.cpp )
+add_executable( test_opnp test.cpp opnp.cpp )

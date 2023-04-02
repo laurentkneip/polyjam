@@ -42,6 +42,17 @@ namespace polyjam
   void execGenerator( list<Poly*> & eqs, const string & solverName, const string & suffix, const string & parameters, bool visualize = false );
   void execGenerator( list<Poly*> & eqs, list<Poly*> & eqs_sym, const string & solverName, const string & suffix, const string & parameters, bool visualize = false );
 
+  void execGeneratorSym( list<Poly*> & eqs, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & parameters, bool visualize = false );
+  void execGeneratorSym( list<Poly*> & eqs, list<Poly*> & eqs_sym, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & parameters, bool visualize = false );
+  void execGeneratorSym( list<Poly*> & eqs, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & suffix, const string & parameters, bool visualize = false );
+  void execGeneratorSym( list<Poly*> & eqs, list<Poly*> & eqs_sym, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & suffix, const string & parameters, bool visualize = false );
+
+  //The following function is used internally and for actual solver generation
+  void execGeneratorInternal( bool even, list<Poly*> & eqs, list<Poly*> & eqs_sym, int expanderDegree, std::vector<Monomial> & baseMonomials, const string & solverName, const string & suffix, const string & parameters, bool visualize = false );
+
+  //The following function is to split up the list of polynomials into a symbolic and a non-symbolic one
+  void splitPolyLists( list<Poly*> & eqs, list<Poly*> & eqs_zp, list<Poly*> & eqs_sym );
+
   //The following functions are for interaction with Macaulay and interpretation of the result
   string exec( const char * cmd );
   void extractMonomials( const string & input, vector<Monomial> & baseMonomials, size_t nu );

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.4.6)
 project(polyjam)
 
-set (POLYJAM_VERSION_MAJOR 1)
+set (POLYJAM_VERSION_MAJOR 2)
 set (POLYJAM_VERSION_MINOR 0)
 
 # Set the build type.  Options are:

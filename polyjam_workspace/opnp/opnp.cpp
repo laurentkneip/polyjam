@@ -1,65 +1,293 @@
 #include <polyjam/polyjam.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 int main( int argc, char** argv )
 {  
   //initialize the random generator
   initGenerator();
   size_t nu = 4; //the number of unknowns in the problem
+  size_t numberBearingVectors = 3;
 
+  //****** Part 1: get independent random variables *******//
+
+  //random rotation
+  std::cout << "generating random rotation" << std::endl;
+  PolyMatrix q_gt(Poly::zeroZ(nu),4,1);
+  for( int j = 0; j < 4; j++ )
+    q_gt[j] = Poly::randZ(nu);
+  
+  Poly scale = (q_gt[0]*q_gt[0]) + (q_gt[1]*q_gt[1]) + (q_gt[2]*q_gt[2]) + (q_gt[3]*q_gt[3]);
+  //We need to make sure that the scale is the inverse of the average depth
+  //Let us calculate the total depth, it will be used later to make sure things stay consistent
+  Poly averageDepth = Poly::oneZ(nu).leadingTerm() / scale.leadingTerm();
+  Poly totalDepth = Poly::constZ(numberBearingVectors,nu) * averageDepth;
+  
+  //Derive the scaled rotation matrix
+  PolyMatrix R_gt(Poly::zeroZ(nu),3,3);
+  R_gt(0,0) = (q_gt[0]*q_gt[0]) + (q_gt[1]*q_gt[1]) - (q_gt[2]*q_gt[2]) - (q_gt[3]*q_gt[3]);
+  R_gt(1,1) = (q_gt[0]*q_gt[0]) - (q_gt[1]*q_gt[1]) + (q_gt[2]*q_gt[2]) - (q_gt[3]*q_gt[3]);
+  R_gt(2,2) = (q_gt[0]*q_gt[0]) - (q_gt[1]*q_gt[1]) - (q_gt[2]*q_gt[2]) + (q_gt[3]*q_gt[3]);
+  R_gt(0,1) = Poly::constZ(2,nu) * (q_gt[1]*q_gt[2]-q_gt[3]*q_gt[0]);
+  R_gt(0,2) = Poly::constZ(2,nu) * (q_gt[1]*q_gt[3]+q_gt[2]*q_gt[0]);
+  R_gt(1,2) = Poly::constZ(2,nu) * (q_gt[2]*q_gt[3]-q_gt[1]*q_gt[0]);
+  R_gt(1,0) = Poly::constZ(2,nu) * (q_gt[1]*q_gt[2]+q_gt[3]*q_gt[0]);
+  R_gt(2,0) = Poly::constZ(2,nu) * (q_gt[1]*q_gt[3]-q_gt[2]*q_gt[0]);
+  R_gt(2,1) = Poly::constZ(2,nu) * (q_gt[2]*q_gt[3]+q_gt[1]*q_gt[0]);
+  
+  //random translation (this is not the true translation, but a scale one again)
+  std::cout << "generating random translation" << std::endl;
+  PolyMatrix t_gt(Poly::zeroZ(nu),3,1);
+  for( int i = 0; i < 3; i++ )
+    t_gt[i] = Poly::randZ(nu);
+  
+  //random image points and random depths (for opnp, we need to start from the image points)
+  std::cout << "generating random image points" << std::endl;
+  std::vector<PolyMatrix> fs;
+  std::vector<Poly> depths;
+  for( int i = 0; i < (int) numberBearingVectors; i++ ) {
+    fs.push_back(PolyMatrix(Poly::zeroZ(nu),3,1));
+    fs.back()[0] = Poly::randZ(nu);
+    fs.back()[1] = Poly::randZ(nu);
+    fs.back()[2] = Poly::oneZ(nu);
+    depths.push_back( Poly::randZ(nu) );
+  }
+
+  //Important trick: reset the third depth such that we obtain a consistent total depth
+  depths[2] = totalDepth - depths[0] - depths[1];
+
+  //****** Part 2: extract consistent world points wihin Zp *****//
+  std::cout << "extracting the consistent world points" << std::endl;
+  
+  //Calculate the inverse of R_gt (again, R_gt is not an orthonormal matrix)
+  Poly scaleSquared = scale * scale;
+  Poly scaleSquaredInverse = Poly::oneZ(nu).leadingTerm() / scaleSquared.leadingTerm();
+  PolyMatrix R_gt_inv = R_gt.transpose() * scaleSquaredInverse;
+
+  std::vector<PolyMatrix> wps;
+  for( int i = 0; i < (int) numberBearingVectors; i++ ) {
+    Poly scaledDepth = depths[i].leadingTerm() / averageDepth.leadingTerm();
+    wps.push_back( R_gt_inv * ( fs[i] * scaledDepth - t_gt) );
+  }
+
+  /////////////////////////////////////////////////////////////
+  //////////////////generate double wps////////////////////////
+  /////////////////////////////////////////////////////////////
+  std::vector<PolyMatrix> wps_sz;
+  for( int i = 0; i < (int) numberBearingVectors; i++ ) {
+    wps_sz.push_back(PolyMatrix(Poly::zeroSZ(nu),3,1));
+
+    for( int j = 0; j < 3; j++ ) {      
+      std::stringstream name; name << "wps[" << i << "][" << j << "]";
+      wps_sz.back()[j] = Poly(Term(
+        Coefficient(name.str()),
+        wps[i][j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+    }
+  }
+
+  /////////////////////////////////////////////////////////////
+  //////////////////generate double fs/////////////////////////
+  /////////////////////////////////////////////////////////////
+  std::vector<PolyMatrix> fs_sz;
+  for( int i = 0; i < (int) numberBearingVectors; i++ ) {
+    fs_sz.push_back(PolyMatrix(Poly::zeroSZ(nu),3,1));
+
+    for( int j = 0; j < 3; j++ ) {
+      std::stringstream name; name << "fs[" << i << "][" << j << "]";
+      fs_sz.back()[j] = Poly(Term(
+        Coefficient(name.str()),
+        fs[i][j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+    }
+  }
+
+  //******** Part 3: start the calculation of the polynomial coefficients ******//
+
+  //1) find center of image points
+  Poly n = Poly::constZ(numberBearingVectors,nu);
+
+  PolyMatrix f_center(Poly::zeroZ(nu),3,1);
+  for( int i = 0; i < numberBearingVectors; i++ )
+    f_center += fs[i];
+  for( int j = 0; j < 3; j++ )
+    f_center[j] = f_center[j].leadingTerm()/n.leadingTerm();
+
+  /////////////////////////////////////////////////////////////
+  //////////////////generate double f_center///////////////////
+  /////////////////////////////////////////////////////////////
+  PolyMatrix f_center_sz(Poly::zeroSZ(nu),3,1);
+
+  for( int j = 0; j < 3; j++ ) {
+    std::stringstream name; name << "f_center[" << j << "]";
+    f_center_sz[j] = Poly(Term(
+        Coefficient(name.str()),
+        f_center[j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+  }
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+
+  //2) find the center of the world points
+  PolyMatrix wp_center(Poly::zeroZ(nu),3,1);
+  for( int i = 0; i < numberBearingVectors; i++ )
+    wp_center += wps[i];
+  for( int j = 0; j < 3; j++ )
+    wp_center[j] = wp_center[j].leadingTerm()/n.leadingTerm();
+
+  /////////////////////////////////////////////////////////////
+  //////////////////generate double wp_center//////////////////
+  /////////////////////////////////////////////////////////////
+  PolyMatrix wp_center_sz(Poly::zeroSZ(nu),3,1);
+
+  for( int j = 0; j < 3; j++ ) {
+    std::stringstream name; name << "wp_center[" << j << "]";
+    wp_center_sz[j] = Poly(Term(
+        Coefficient(name.str()),
+        wp_center[j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+  }
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+
+  //2) create inner summation terms
+  vector<PolyMatrix> uwps, vwps;
+  PolyMatrix uwp_center(Poly::zeroZ(nu),3,1);
+  PolyMatrix vwp_center(Poly::zeroZ(nu),3,1);
+  for( int i = 0; i < numberBearingVectors; i++ ) {
+    uwps.push_back( (wps[i]-wp_center) * fs[i][0] ); uwp_center += uwps.back();
+    vwps.push_back( (wps[i]-wp_center) * fs[i][1] ); vwp_center += vwps.back();
+  }
+  for( int j = 0; j < 3; j++ ) {
+    uwp_center[j] = uwp_center[j].leadingTerm()/n.leadingTerm();
+    vwp_center[j] = vwp_center[j].leadingTerm()/n.leadingTerm();
+  }
+
+  /////////////////////////////////////////////////////////////
+  //////////////////generate double uwps///////////////////////
+  /////////////////////////////////////////////////////////////
+  vector<PolyMatrix> uwps_sz;
+  for( int i = 0; i < (int) numberBearingVectors; i++ ) {
+    uwps_sz.push_back(PolyMatrix(Poly::zeroSZ(nu),3,1));
+
+    for( int j = 0; j < 3; j++ ) {      
+      std::stringstream name; name << "uwps[" << i << "][" << j << "]";
+      uwps_sz.back()[j] = Poly(Term(
+        Coefficient(name.str()),
+        uwps[i][j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+    }
+  }
+
+  /////////////////////////////////////////////////////////////
+  //////////////////generate double vwps///////////////////////
+  /////////////////////////////////////////////////////////////
+  vector<PolyMatrix> vwps_sz;
+  for( int i = 0; i < (int) numberBearingVectors; i++ ) {
+    vwps_sz.push_back(PolyMatrix(Poly::zeroSZ(nu),3,1));
+
+    for( int j = 0; j < 3; j++ ) {      
+      std::stringstream name; name << "vwps[" << i << "][" << j << "]";
+      vwps_sz.back()[j] = Poly(Term(
+        Coefficient(name.str()),
+        vwps[i][j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+    }
+  }
+
+  /////////////////////////////////////////////////////////////
+  //////////////////generate double uwp_center/////////////////
+  /////////////////////////////////////////////////////////////
+  PolyMatrix uwp_center_sz(Poly::zeroSZ(nu),3,1);
+
+  for( int j = 0; j < 3; j++ ) {
+    std::stringstream name; name << "uwp_center[" << j << "]";
+    uwp_center_sz[j] = Poly(Term(
+        Coefficient(name.str()),
+        uwp_center[j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+  }
+  /////////////////////////////////////////////////////////////
+  /////////////////generate double vwp_center//////////////////
+  /////////////////////////////////////////////////////////////
+  PolyMatrix vwp_center_sz(Poly::zeroSZ(nu),3,1);
+
+  for( int j = 0; j < 3; j++ ) {
+    std::stringstream name; name << "vwp_center[" << j << "]";
+    vwp_center_sz[j] = Poly(Term(
+        Coefficient(name.str()),
+        vwp_center[j].leadingTerm().coefficient().clone(),
+        Monomial(nu) ));
+  }
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+
+
+  //3) construct unknowns
   Poly a = Poly::uSZ(1,nu);
   Poly b = Poly::uSZ(2,nu);
   Poly c = Poly::uSZ(3,nu);
   Poly d = Poly::uSZ(4,nu);
 
-  list<Poly*> eqs;
-  for( int i = 0; i < 4; i++ )
-    eqs.push_back(new Poly(Poly::zeroSZ(nu)));
+  PolyMatrix r1t(Poly::zeroSZ(nu),1,3);
+  PolyMatrix r2t(Poly::zeroSZ(nu),1,3);
+  PolyMatrix r3t(Poly::zeroSZ(nu),1,3);
+  r1t(0,0) = a*a + b*b - c*c - d*d;
+  r1t(0,1) = Poly::constSZ(2,nu)*b*c - Poly::constSZ(2,nu)*a*d;
+  r1t(0,2) = Poly::constSZ(2,nu)*b*d + Poly::constSZ(2,nu)*a*c;
+  r2t(0,0) = Poly::constSZ(2,nu)*b*c + Poly::constSZ(2,nu)*a*d;
+  r2t(0,1) = a*a - b*b + c*c - d*d;
+  r2t(0,2) = Poly::constSZ(2,nu)*c*d - Poly::constSZ(2,nu)*a*b;
+  r3t(0,0) = Poly::constSZ(2,nu)*b*d - Poly::constSZ(2,nu)*a*c;
+  r3t(0,1) = Poly::constSZ(2,nu)*c*d + Poly::constSZ(2,nu)*a*b;
+  r3t(0,2) = a*a - b*b - c*c + d*d;
 
-  list<Poly*>::iterator it = eqs.begin();
-  for( int p = 0; p < 4; p++ )
-  {
-    std::vector<Poly*> coeffs(24);
+  //4) construct the main equation
+  Poly t1 = f_center_sz[0] + (r3t * uwp_center_sz)(0,0) - (r1t * wp_center_sz)(0,0);
+  Poly t2 = f_center_sz[1] + (r3t * vwp_center_sz)(0,0) - (r2t * wp_center_sz)(0,0);
+  Poly energy = Poly::zeroSZ(nu);
 
-    for( int i = 0; i < 24; i++ )
-    {
-      stringstream name; name << "coeffs" << p+1 << "[" << i << "]";
-      coeffs[i] = new Poly(Poly::SrandZ( name.str(), nu ));
+  for( int i = 0; i < numberBearingVectors; i++ ) {
+    Poly part1 = fs_sz[i][0] + (r3t*uwps_sz[i])(0,0) - (r1t * wps_sz[i])(0,0) - t1;
+    Poly part2 = fs_sz[i][1] + (r3t*vwps_sz[i])(0,0) - (r2t * wps_sz[i])(0,0) - t2;
+    energy += part1 * part1 + part2 * part2;
+  }
+
+  //5) take the derivatives
+  list<Poly*> eqs; vector<Poly*> eqs_vec;
+  for( int p = 0; p < nu; p++ ) {
+    Poly * newPolynomial = new Poly(Poly::zeroSZ(nu));
+    eqs.push_back(newPolynomial);
+    eqs_vec.push_back(newPolynomial);
+  }
+
+  auto it = energy.begin();
+  while( it != energy.end() ) {
+    Term t = it->clone();
+
+    for( int p = 0; p < nu; p++ ) {
+      unsigned int constant = t.monomial().exponents()[p];
+      if( constant > 0 ) {
+        std::vector<unsigned int> newExponents = t.monomial().exponents();
+        newExponents[p]--;
+        Coefficient coeff_zp = t.coefficient().clone();
+        t.setDominant(1);
+        Coefficient coeff_sym = t.coefficient().clone();
+        t.setDominant(0);
+        (*eqs_vec[p]) += Poly::constSZ(constant,nu) * Poly(Term(coeff_sym,coeff_zp,Monomial(newExponents)));
+      }
     }
-
-    Poly & equation = **it;
-    equation += (*(coeffs[ 0])) * a * a * a; //a^3
-    equation += (*(coeffs[ 1])) * a * a * b; //a^2*b
-    equation += (*(coeffs[ 2])) * a * a * c; //a^2*c
-    equation += (*(coeffs[ 3])) * a * a * d; //a^2*d
-    equation += (*(coeffs[ 4])) * a * b * b; //a*b^2
-    equation += (*(coeffs[ 5])) * a * b * c; //a*b*c
-    equation += (*(coeffs[ 6])) * a * b * d; //a*b*d
-    equation += (*(coeffs[ 7])) * a * c * c; //a*c^2
-    equation += (*(coeffs[ 8])) * a * c * d; //a*c*d
-    equation += (*(coeffs[ 9])) * a * d * d; //a*d^2
-    equation += (*(coeffs[10])) * a;         //a
-    equation += (*(coeffs[11])) * b * b * b; //b^3
-    equation += (*(coeffs[12])) * b * b * c; //b^2*c
-    equation += (*(coeffs[13])) * b * b * d; //b^2*d
-    equation += (*(coeffs[14])) * b * c * c; //b*c^2
-    equation += (*(coeffs[15])) * b * c * d; //b*c*d
-    equation += (*(coeffs[16])) * b * d * d; //b*d^2
-    equation += (*(coeffs[17])) * b;         //b
-    equation += (*(coeffs[18])) * c * c * c; //c^3
-    equation += (*(coeffs[19])) * c * c * d; //c^2*d
-    equation += (*(coeffs[20])) * c * d * d; //c*d^2
-    equation += (*(coeffs[21])) * c;         //c
-    equation += (*(coeffs[22])) * d * d * d; //d^3
-    equation += (*(coeffs[23])) * d;         //d
 
     it++;
   }
 
-  //execGenerator( eqs, string("opnp"), string("std::vector<double> & coeffs") );
+  //******** Part 5: Generate the solver ******
 
-  //new solver that respects symmetry
+  //find solver that respects symmetry (the following code is a bit ad-hoc as it is used to find the baseMonomials and the degree of expansion)
+
+  /*
+  //define the expanders (with a hypothetical expansion degree)
   std::vector<Monomial> expanders;
   expanders.push_back(a.leadingTerm().monomial());
   expanders.push_back(b.leadingTerm().monomial());
@@ -72,18 +300,23 @@ int main( int argc, char** argv )
   expanders = expanders2;
 
   //attempt solution and print all the monomials
-  /*
   CMatrix attempt = methods::experiment(eqs,expanders,true);
   std::vector<core::Monomial> monomials2 = attempt.monomials();
   for( int i = 0; i < monomials2.size(); i++ )
   {
     monomials2[i].print(); std::cout << std::endl;
   }
+  return 0;
   */
+  
+
+  //Once the above code has been used to find the degree of expansion and the base monomials, proceed
+
+  //expansion degree
+  int expanderDegree = 6;
 
   //monomials (found by visual inspection)
   std::vector<Monomial> baseMonomials;
-  unsigned int exp[4];
 
   unsigned int exp01[4] = {1,0,0,6}; baseMonomials.push_back(Monomial(nu,exp01)); // x_1*x_4^6
   unsigned int exp02[4] = {0,1,0,6}; baseMonomials.push_back(Monomial(nu,exp02)); // x_2*x_4^6
@@ -126,46 +359,9 @@ int main( int argc, char** argv )
   unsigned int exp39[4] = {0,0,1,0}; baseMonomials.push_back(Monomial(nu,exp39)); // x_3
   unsigned int exp40[4] = {0,0,0,1}; baseMonomials.push_back(Monomial(nu,exp40)); // x_4
 
-  exp[0] = 0; exp[1] = 0; exp[2] = 0; exp[3] = 2;                                 // x_4^2
-
-  Monomial multiplier(nu,exp);
-
-  //split up the polynomials into symbolic and zp ones
-  list<Poly*> eqs_zp;
-  list<Poly*> eqs_sym;
-
-  list<Poly*>::iterator it2 = eqs.begin();
-  while( it2 != eqs.end() )
-  {
-    //the first coefficient in each term is the Zp one
-    //the second coefficient in each term is the symbolic one
-
-    (*it2)->setDominant(0); //-> activate the Zp one
-    eqs_zp.push_back(new Poly( (*it2)->clone(false) )); //-> clone, but only dominant part
-    (*it2)->setDominant(1); //-> activate the Zp one
-    eqs_sym.push_back(new Poly( (*it2)->clone(false) )); //-> clone, but only dominant part
-
-    it2++;
-  }
-
+  //generate the symmetric solver
   std::string solverName("opnp");
-  std::string solverPath("/Users/laurent/ldevel/polyjam/polyjam_solvers/");
-  stringstream subdir2;
-  subdir2 << solverPath << solverName;
-
-  struct stat info2;
-  if( stat( subdir2.str().c_str(), &info2 ) != 0 )
-  {
-    stringstream dircmd;
-    dircmd << "mkdir " << subdir2.str();
-    system(dircmd.str().c_str());
-  }
-
-  std::cout << "Starting the solver generation." << std::endl;
-  stringstream codeFile;
-  codeFile << solverPath << solverName << "/" << solverName << ".cpp";
-  stringstream headerFile;
-  headerFile << solverPath << solverName << "/" << solverName << ".hpp";
-  string parameters("std::vector<double> & coeffs1, std::vector<double> & coeffs2, std::vector<double> & coeffs3, std::vector<double> & coeffs4");
-  methods::generate( eqs_zp, eqs_sym, expanders, baseMonomials, multiplier, headerFile.str(), codeFile.str(), solverName, parameters, true );
+  string parameters("std::vector<Eigen::Vector3d> & fs, std::vector<Eigen::Vector3d> & wps, Eigen::Vector3d & f_center, Eigen::Vector3d & wp_center, std::vector<Eigen::Vector3d> & uwps, std::vector<Eigen::Vector3d> & vwps, Eigen::Vector3d & uwp_center, Eigen::Vector3d & vwp_center");
+  execGeneratorSym( eqs, expanderDegree, baseMonomials, solverName, parameters, true );
 }
+  
