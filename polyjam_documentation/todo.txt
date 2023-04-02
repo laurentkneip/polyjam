@@ -1,0 +1,13 @@
+Improvements:
+
+Move semantics
+Number of unknowns should become global variable
+Global operators
+Automatic differentiation
+Polynomial division
+Make it purely script based (even if internally it is still compiled)
+Options passed from outside
+Paths dynamic
+Handle special cases in end
+Add old gb solver
+Improve efficiency of generated code
